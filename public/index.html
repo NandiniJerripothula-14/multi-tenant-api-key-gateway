@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Key Gateway - Developer Console</title>
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --bg-primary: #0a0e17;
+      --bg-secondary: #121824;
+      --bg-tertiary: #1b2336;
+      --accent-color: #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.15);
+      --accent-success: #10b981;
+      --accent-error: #ef4444;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --font-family-title: 'Outfit', sans-serif;
+      --font-family-body: 'Inter', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      font-family: var(--font-family-body);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    header {
+      background-color: rgba(18, 24, 36, 0.8);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1.25rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo-icon {
+      width: 2.25rem;
+      height: 2.25rem;
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-family: var(--font-family-title);
+      color: #fff;
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+    }
+
+    .logo-text {
+      font-family: var(--font-family-title);
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(to right, #ffffff, #9ca3af);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .tenant-select-container {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    select.tenant-dropdown {
+      background-color: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      font-family: var(--font-family-body);
+      font-size: 0.9rem;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    select.tenant-dropdown:focus {
+      border-color: var(--accent-color);
+    }
+
+    main {
+      flex: 1;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .dashboard-title {
+      font-family: var(--font-family-title);
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .dashboard-subtitle {
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .stat-card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--accent-color);
+      opacity: 0.8;
+    }
+
+    .stat-card.success::before {
+      background: var(--accent-success);
+    }
+
+    .stat-card.error::before {
+      background: var(--accent-error);
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-value {
+      font-family: var(--font-family-title);
+      font-size: 2rem;
+      font-weight: 700;
+    }
+
+    .layout-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 2rem;
+    }
+
+    @media (max-width: 1024px) {
+      .layout-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+      padding: 1.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1rem;
+    }
+
+    .card-title {
+      font-family: var(--font-family-title);
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .btn {
+      background-color: var(--accent-color);
+      color: #ffffff;
+      border: none;
+      padding: 0.625rem 1.25rem;
+      border-radius: 0.375rem;
+      font-weight: 600;
+      font-family: var(--font-family-body);
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background-color: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+    }
+
+    .btn-danger {
+      background-color: var(--accent-error);
+    }
+
+    .btn-sm {
+      padding: 0.4rem 0.75rem;
+      font-size: 0.8rem;
+    }
+
+    /* Table styles */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      padding: 1rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    td {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.9rem;
+    }
+
+    tr:hover td {
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge-success {
+      background-color: rgba(16, 185, 129, 0.15);
+      color: var(--accent-success);
+    }
+
+    .badge-danger {
+      background-color: rgba(239, 68, 68, 0.15);
+      color: var(--accent-error);
+    }
+
+    .badge-warning {
+      background-color: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+    }
+
+    /* Modal styling */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.75);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      z-index: 1000;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal-content {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+      width: 100%;
+      max-width: 500px;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      transform: translateY(20px);
+      transition: transform 0.3s;
+    }
+
+    .modal-overlay.active .modal-content {
+      transform: translateY(0);
+    }
+
+    .modal-title {
+      font-family: var(--font-family-title);
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    label {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    input[type="number"], input[type="text"] {
+      background-color: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.75rem;
+      border-radius: 0.375rem;
+      font-family: var(--font-family-body);
+      outline: none;
+    }
+
+    input[type="number"]:focus, input[type="text"]:focus {
+      border-color: var(--accent-color);
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+    }
+
+    /* Key display block */
+    .key-display-box {
+      background-color: var(--bg-tertiary);
+      border: 1px dashed var(--accent-color);
+      border-radius: 0.375rem;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: monospace;
+      font-size: 1rem;
+      margin-top: 0.5rem;
+      word-break: break-all;
+    }
+
+    /* Sandbox Panel */
+    .sandbox-response {
+      background-color: var(--bg-tertiary);
+      border-radius: 0.375rem;
+      padding: 1rem;
+      font-family: monospace;
+      font-size: 0.85rem;
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid var(--border-color);
+    }
+
+    /* Pagination container */
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1rem;
+    }
+
+    .pagination-info {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .pagination-buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo-container">
+      <div class="logo-icon">P</div>
+      <div class="logo-text">Partnr Key Gateway</div>
+    </div>
+    <div class="tenant-select-container">
+      <label for="tenantSelect">Active Tenant:</label>
+      <select id="tenantSelect" class="tenant-dropdown" onchange="onTenantChanged()">
+        <!-- Seeded tenants will load here -->
+      </select>
+    </div>
+  </header>
+
+  <main>
+    <div>
+      <h1 class="dashboard-title">Developer Console</h1>
+      <p class="dashboard-subtitle">Manage multi-tenant API credentials, monitor sliding-window rate limits, and view request audit logs.</p>
+    </div>
+
+    <!-- Stats summary widgets -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Active Keys</div>
+        <div id="statActiveKeys" class="stat-value">0</div>
+      </div>
+      <div class="stat-card success">
+        <div class="stat-label">Requests (Last 15m)</div>
+        <div id="statTotalRequests" class="stat-value">0</div>
+      </div>
+      <div class="stat-card error">
+        <div class="stat-label">Blocked (429)</div>
+        <div id="statBlockedRequests" class="stat-value">0</div>
+      </div>
+    </div>
+
+    <!-- Analytics Usage Visualization -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Real-Time Gateway Traffic (Last 15 Mins)</h2>
+      </div>
+      <div style="position: relative; height: 250px; width: 100%;">
+        <canvas id="trafficChart"></canvas>
+      </div>
+    </div>
+
+    <div class="layout-row">
+      <!-- Keys Management -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">API Keys</h2>
+          <button class="btn" onclick="openCreateModal()">+ Create API Key</button>
+        </div>
+        <table id="keysTable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Masked Key</th>
+              <th>Status</th>
+              <th>Created At</th>
+              <th style="text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- API Keys will render here -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Testing Sandbox -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Gateway Sandbox</h2>
+        </div>
+        <div class="form-group">
+          <label for="sandboxKey">Test API Key:</label>
+          <input type="text" id="sandboxKey" placeholder="sk_live_..." />
+        </div>
+        <button class="btn" onclick="triggerSandboxRequest()">Send Request to /api/protected</button>
+        
+        <div class="form-group" style="margin-top: 1rem;">
+          <label>Response Console:</label>
+          <div id="sandboxResponse" class="sandbox-response">Send a request to see output...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audit Logs -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Audit Logs</h2>
+      </div>
+      <table id="auditLogsTable">
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>API Key</th>
+            <th>Endpoint</th>
+            <th>Status Code</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Audit logs will load here -->
+        </tbody>
+      </table>
+      <div class="pagination">
+        <div id="paginationInfo" class="pagination-info">Showing 0 to 0 of 0 logs</div>
+        <div class="pagination-buttons">
+          <button id="prevBtn" class="btn btn-secondary btn-sm" onclick="changePage(-1)">Previous</button>
+          <button id="nextBtn" class="btn btn-secondary btn-sm" onclick="changePage(1)">Next</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Create Key Modal -->
+  <div id="createModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 class="modal-title">Create API Key</h3>
+      <div class="form-group">
+        <label for="rateLimitInput">Rate Limit (Requests per Minute):</label>
+        <input type="number" id="rateLimitInput" value="100" min="1" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeCreateModal()">Cancel</button>
+        <button class="btn" onclick="createApiKey()">Generate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Success Modal -->
+  <div id="keySuccessModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 class="modal-title" style="color: var(--accent-success);">API Key Generated!</h3>
+      <p style="font-size: 0.9rem; color: var(--text-muted);">Copy this key now. For security reasons, you will not be able to see it again.</p>
+      <div class="key-display-box">
+        <span id="generatedKeySpan"></span>
+        <button class="btn btn-secondary btn-sm" onclick="copyGeneratedKey()">Copy</button>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeSuccessModal()">I have copied it</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirmModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 id="confirmTitle" class="modal-title">Are you sure?</h3>
+      <p id="confirmMessage" style="font-size: 0.9rem; color: var(--text-muted);"></p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
+        <button id="confirmBtn" class="btn">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let activeTenantId = null;
+    let auditLogsOffset = 0;
+    const auditLogsLimit = 10;
+    let trafficChartInstance = null;
+    let rotationTargetKeyId = null;
+    let revocationTargetKeyId = null;
+
+    // Load tenants on page load
+    window.addEventListener('DOMContentLoaded', async () => {
+      await fetchTenants();
+      initChart();
+      // Periodically refresh stats and logs
+      setInterval(refreshTelemetry, 5000);
+    });
+
+    async function fetchTenants() {
+      try {
+        const res = await fetch('/api/tenants');
+        const tenants = await res.json();
+        const select = document.getElementById('tenantSelect');
+        select.innerHTML = '';
+        tenants.forEach(tenant => {
+          const opt = document.createElement('option');
+          opt.value = tenant.id;
+          opt.textContent = tenant.name;
+          select.appendChild(opt);
+        });
+        if (tenants.length > 0) {
+          activeTenantId = tenants[0].id;
+          await refreshData();
+        }
+      } catch (err) {
+        console.error('Error fetching tenants:', err);
+      }
+    }
+
+    async function onTenantChanged() {
+      activeTenantId = document.getElementById('tenantSelect').value;
+      auditLogsOffset = 0;
+      await refreshData();
+    }
+
+    async function refreshData() {
+      if (!activeTenantId) return;
+      await Promise.all([
+        fetchKeys(),
+        fetchAuditLogs(),
+        fetchAnalytics()
+      ]);
+    }
+
+    async function refreshTelemetry() {
+      if (!activeTenantId) return;
+      await Promise.all([
+        fetchAuditLogs(),
+        fetchAnalytics()
+      ]);
+    }
+
+    async function fetchKeys() {
+      try {
+        const res = await fetch(`/api/tenants/${activeTenantId}/keys`);
+        const keys = await res.json();
+        const tbody = document.querySelector('#keysTable tbody');
+        tbody.innerHTML = '';
+        
+        document.getElementById('statActiveKeys').textContent = keys.filter(k => k.isActive).length;
+
+        if (keys.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No active API keys found.</td></tr>';
+          return;
+        }
+
+        keys.forEach(key => {
+          const tr = document.createElement('tr');
+          const dateStr = new Date(key.createdAt).toLocaleString();
+          
+          tr.innerHTML = `
+            <td>${key.id}</td>
+            <td style="font-family: monospace; font-size: 0.95rem;">${key.maskedKey}</td>
+            <td>
+              <span class="badge ${key.isActive ? 'badge-success' : 'badge-danger'}">
+                ${key.isActive ? 'Active' : 'Expired'}
+              </span>
+            </td>
+            <td>${dateStr}</td>
+            <td style="text-align: right; display: flex; gap: 0.5rem; justify-content: flex-end;">
+              <button class="btn btn-secondary btn-sm" onclick="confirmRotate(${key.id})">Rotate</button>
+              <button class="btn btn-danger btn-sm" onclick="confirmRevoke(${key.id})">Revoke</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error('Error fetching keys:', err);
+      }
+    }
+
+    async function fetchAuditLogs() {
+      try {
+        const res = await fetch(`/api/tenants/${activeTenantId}/audit-logs?limit=${auditLogsLimit}&offset=${auditLogsOffset}`);
+        const data = await res.json();
+        const tbody = document.querySelector('#auditLogsTable tbody');
+        tbody.innerHTML = '';
+
+        if (!data.logs || data.logs.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No audit logs found.</td></tr>';
+          document.getElementById('paginationInfo').textContent = 'Showing 0 to 0 of 0 logs';
+          return;
+        }
+
+        data.logs.forEach(log => {
+          const tr = document.createElement('tr');
+          const dateStr = new Date(log.timestamp).toLocaleString();
+          const statusBadge = log.statusCode === 200 
+            ? `<span class="badge badge-success">200 OK</span>` 
+            : `<span class="badge badge-danger">${log.statusCode} Blocked</span>`;
+          
+          tr.innerHTML = `
+            <td>${dateStr}</td>
+            <td style="font-family: monospace;">${log.maskedKey}</td>
+            <td>${log.endpoint}</td>
+            <td>${statusBadge}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        const startIdx = auditLogsOffset + 1;
+        const endIdx = Math.min(auditLogsOffset + auditLogsLimit, data.total);
+        document.getElementById('paginationInfo').textContent = `Showing ${startIdx} to ${endIdx} of ${data.total} logs`;
+        
+        document.getElementById('prevBtn').disabled = auditLogsOffset === 0;
+        document.getElementById('nextBtn').disabled = endIdx >= data.total;
+      } catch (err) {
+        console.error('Error fetching audit logs:', err);
+      }
+    }
+
+    async function changePage(direction) {
+      if (direction === -1 && auditLogsOffset > 0) {
+        auditLogsOffset -= auditLogsLimit;
+      } else if (direction === 1) {
+        auditLogsOffset += auditLogsLimit;
+      }
+      await fetchAuditLogs();
+    }
+
+    async function fetchAnalytics() {
+      try {
+        const res = await fetch(`/api/tenants/${activeTenantId}/analytics`);
+        const analytics = await res.json();
+        
+        // Sum total requests and blocked in the list
+        let total = 0;
+        let blocked = 0;
+        
+        const labels = [];
+        const successData = [];
+        const blockedData = [];
+
+        analytics.forEach(item => {
+          const succ = parseInt(item.success);
+          const blk = parseInt(item.blocked);
+          total += (succ + blk);
+          blocked += blk;
+
+          labels.push(item.minute);
+          successData.push(succ);
+          blockedData.push(blk);
+        });
+
+        document.getElementById('statTotalRequests').textContent = total;
+        document.getElementById('statBlockedRequests').textContent = blocked;
+
+        updateChart(labels, successData, blockedData);
+      } catch (err) {
+        console.error('Error fetching analytics:', err);
+      }
+    }
+
+    function initChart() {
+      const ctx = document.getElementById('trafficChart').getContext('2d');
+      trafficChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: 'Successful Requests (200)',
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              data: [],
+              fill: true,
+              tension: 0.3
+            },
+            {
+              label: 'Blocked Requests (429)',
+              borderColor: '#ef4444',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              data: [],
+              fill: true,
+              tension: 0.3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: { color: 'rgba(255, 255, 255, 0.05)' },
+              ticks: { color: '#9ca3af' }
+            },
+            x: {
+              grid: { color: 'rgba(255, 255, 255, 0.05)' },
+              ticks: { color: '#9ca3af' }
+            }
+          },
+          plugins: {
+            legend: {
+              labels: { color: '#f3f4f6' }
+            }
+          }
+        }
+      });
+    }
+
+    function updateChart(labels, success, blocked) {
+      if (!trafficChartInstance) return;
+      trafficChartInstance.data.labels = labels;
+      trafficChartInstance.data.datasets[0].data = success;
+      trafficChartInstance.data.datasets[1].data = blocked;
+      trafficChartInstance.update();
+    }
+
+    // Modal Action Triggers
+    function openCreateModal() {
+      document.getElementById('createModal').classList.add('active');
+    }
+
+    function closeCreateModal() {
+      document.getElementById('createModal').classList.remove('active');
+    }
+
+    async function createApiKey() {
+      const limit = parseInt(document.getElementById('rateLimitInput').value) || 100;
+      closeCreateModal();
+
+      try {
+        const res = await fetch(`/api/tenants/${activeTenantId}/keys`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rateLimitPerMinute: limit })
+        });
+        const data = await res.json();
+        
+        // Populate and show success modal
+        document.getElementById('generatedKeySpan').textContent = data.apiKey;
+        document.getElementById('sandboxKey').value = data.apiKey; // auto-populate sandbox
+        document.getElementById('keySuccessModal').classList.add('active');
+        
+        await refreshData();
+      } catch (err) {
+        console.error('Error creating key:', err);
+      }
+    }
+
+    function closeSuccessModal() {
+      document.getElementById('keySuccessModal').classList.remove('active');
+    }
+
+    function copyGeneratedKey() {
+      const text = document.getElementById('generatedKeySpan').textContent;
+      navigator.clipboard.writeText(text);
+      alert('Key copied to clipboard!');
+    }
+
+    function confirmRotate(keyId) {
+      rotationTargetKeyId = keyId;
+      document.getElementById('confirmTitle').textContent = 'Rotate API Key';
+      document.getElementById('confirmMessage').textContent = 'This will generate a new API key. The old API key will remain valid for a 1-minute grace period before expiring. Do you wish to continue?';
+      document.getElementById('confirmBtn').onclick = rotateKey;
+      document.getElementById('confirmModal').classList.add('active');
+    }
+
+    async function rotateKey() {
+      closeConfirmModal();
+      if (!rotationTargetKeyId) return;
+
+      try {
+        const res = await fetch(`/api/keys/${rotationTargetKeyId}/rotate`, {
+          method: 'POST'
+        });
+        const data = await res.json();
+        
+        // Populate and show success modal
+        document.getElementById('generatedKeySpan').textContent = data.newApiKey;
+        document.getElementById('sandboxKey').value = data.newApiKey; // auto-populate sandbox
+        document.getElementById('keySuccessModal').classList.add('active');
+
+        await refreshData();
+      } catch (err) {
+        console.error('Error rotating key:', err);
+      }
+    }
+
+    function confirmRevoke(keyId) {
+      revocationTargetKeyId = keyId;
+      document.getElementById('confirmTitle').textContent = 'Revoke API Key';
+      document.getElementById('confirmMessage').textContent = 'This will immediately revoke this API key. Any client using this key will immediately receive 401 errors. This action cannot be undone.';
+      document.getElementById('confirmBtn').onclick = revokeKey;
+      document.getElementById('confirmModal').classList.add('active');
+    }
+
+    async function revokeKey() {
+      closeConfirmModal();
+      if (!revocationTargetKeyId) return;
+
+      try {
+        await fetch(`/api/keys/${revocationTargetKeyId}`, {
+          method: 'DELETE'
+        });
+        await refreshData();
+      } catch (err) {
+        console.error('Error revoking key:', err);
+      }
+    }
+
+    function closeConfirmModal() {
+      document.getElementById('confirmModal').classList.remove('active');
+    }
+
+    // Testing sandbox request triggers
+    async function triggerSandboxRequest() {
+      const key = document.getElementById('sandboxKey').value.trim();
+      const responseConsole = document.getElementById('sandboxResponse');
+
+      if (!key) {
+        responseConsole.innerHTML = '<span style="color: var(--accent-error);">Error: Please input a valid API Key first.</span>';
+        return;
+      }
+
+      responseConsole.textContent = 'Sending request to /api/protected...';
+
+      try {
+        const res = await fetch('/api/protected', {
+          headers: {
+            'Authorization': `Bearer ${key}`
+          }
+        });
+        const body = await res.json();
+        
+        let retryAfterText = '';
+        if (res.status === 429) {
+          const retryAfter = res.headers.get('Retry-After');
+          retryAfterText = `\nRetry-After: ${retryAfter} seconds`;
+        }
+
+        const isOk = res.status === 200;
+        const color = isOk ? 'var(--accent-success)' : 'var(--accent-error)';
+        
+        responseConsole.innerHTML = `
+<span style="color: ${color}; font-weight: bold;">HTTP ${res.status} ${res.statusText}</span>${retryAfterText}
+
+Response Body:
+${JSON.stringify(body, null, 2)}
+        `.trim();
+        
+        await refreshTelemetry();
+      } catch (err) {
+        responseConsole.innerHTML = `<span style="color: var(--accent-error);">Connection Error: ${err.message}</span>`;
+      }
+    }
+  </script>
+</body>
+</html>

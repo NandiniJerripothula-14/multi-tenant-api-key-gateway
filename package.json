@@ -1,0 +1,16 @@
+{
+  "name": "multi-tenant-api-key-gateway",
+  "version": "1.0.0",
+  "description": "Multi-Tenant API Key Gateway with Rate Limiting and Rotation using Redis",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "pg": "^8.11.3",
+    "redis": "^4.6.10"
+  }
+}
